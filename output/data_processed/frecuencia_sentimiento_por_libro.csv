@@ -1,0 +1,110 @@
+Testamento,Libro,Sentimiento,Frecuencia
+Antiguo Testamento,Salmos,Culpa,125
+Antiguo Testamento,Jeremías,Arrepentimiento,116
+Antiguo Testamento,Salmos,Arrepentimiento,103
+Antiguo Testamento,Jeremías,Culpa,91
+Antiguo Testamento,Levítico,Culpa,89
+Antiguo Testamento,Ezequiel,Culpa,88
+Antiguo Testamento,Isaías,Culpa,76
+Antiguo Testamento,Isaías,Arrepentimiento,74
+Antiguo Testamento,Génesis,Arrepentimiento,64
+Antiguo Testamento,2 Samuel,Arrepentimiento,62
+Antiguo Testamento,1 Samuel,Arrepentimiento,59
+Antiguo Testamento,Job,Culpa,53
+Antiguo Testamento,2 Reyes,Arrepentimiento,49
+Antiguo Testamento,1 Reyes,Culpa,47
+Antiguo Testamento,Ezequiel,Arrepentimiento,47
+Antiguo Testamento,Job,Arrepentimiento,47
+Antiguo Testamento,Números,Culpa,46
+Antiguo Testamento,1 Reyes,Arrepentimiento,45
+Antiguo Testamento,Jueces,Arrepentimiento,43
+Antiguo Testamento,2 Reyes,Culpa,38
+Antiguo Testamento,Oseas,Culpa,35
+Antiguo Testamento,Deuteronomio,Arrepentimiento,34
+Antiguo Testamento,1 Samuel,Culpa,30
+Antiguo Testamento,2 Crónicas,Arrepentimiento,30
+Antiguo Testamento,Josué,Arrepentimiento,29
+Antiguo Testamento,Proverbios,Culpa,27
+Antiguo Testamento,Deuteronomio,Culpa,25
+Antiguo Testamento,Números,Arrepentimiento,25
+Antiguo Testamento,Proverbios,Arrepentimiento,22
+Antiguo Testamento,Génesis,Culpa,21
+Antiguo Testamento,2 Crónicas,Culpa,20
+Antiguo Testamento,Lamentaciones,Arrepentimiento,19
+Antiguo Testamento,Daniel,Arrepentimiento,18
+Antiguo Testamento,Nehemías,Arrepentimiento,17
+Antiguo Testamento,2 Samuel,Culpa,16
+Antiguo Testamento,Daniel,Culpa,16
+Antiguo Testamento,Levítico,Arrepentimiento,16
+Antiguo Testamento,1 Crónicas,Arrepentimiento,15
+Antiguo Testamento,Oseas,Arrepentimiento,14
+Antiguo Testamento,Josué,Culpa,13
+Antiguo Testamento,Lamentaciones,Culpa,13
+Antiguo Testamento,Zacarías,Arrepentimiento,13
+Antiguo Testamento,Amós,Culpa,12
+Antiguo Testamento,Miqueas,Culpa,12
+Antiguo Testamento,Jueces,Culpa,11
+Antiguo Testamento,Nehemías,Culpa,11
+Antiguo Testamento,Esdras,Arrepentimiento,9
+Antiguo Testamento,Esdras,Culpa,9
+Antiguo Testamento,Miqueas,Arrepentimiento,8
+Antiguo Testamento,Rut,Arrepentimiento,8
+Antiguo Testamento,Zacarías,Culpa,7
+Antiguo Testamento,Amós,Arrepentimiento,6
+Antiguo Testamento,Malaquías,Arrepentimiento,6
+Antiguo Testamento,1 Crónicas,Culpa,5
+Antiguo Testamento,Joel,Arrepentimiento,5
+Antiguo Testamento,Sofonías,Culpa,5
+Antiguo Testamento,Jonás,Arrepentimiento,4
+Antiguo Testamento,Malaquías,Culpa,4
+Antiguo Testamento,Sofonías,Arrepentimiento,4
+Antiguo Testamento,Habacuc,Culpa,3
+Antiguo Testamento,Habacuc,Arrepentimiento,2
+Antiguo Testamento,Abdías,Arrepentimiento,1
+Antiguo Testamento,Joel,Culpa,1
+Antiguo Testamento,Jonás,Culpa,1
+Antiguo Testamento,Rut,Culpa,1
+Nuevo Testamento,Romanos,Culpa,77
+Nuevo Testamento,Lucas,Arrepentimiento,52
+Nuevo Testamento,Hechos,Arrepentimiento,44
+Nuevo Testamento,Hebreos,Culpa,30
+Nuevo Testamento,Mateo,Arrepentimiento,28
+Nuevo Testamento,1 Juan,Culpa,27
+Nuevo Testamento,Juan,Arrepentimiento,26
+Nuevo Testamento,Marcos,Arrepentimiento,25
+Nuevo Testamento,Lucas,Culpa,22
+Nuevo Testamento,Juan,Culpa,21
+Nuevo Testamento,Hechos,Culpa,15
+Nuevo Testamento,Mateo,Culpa,15
+Nuevo Testamento,1 Corintios,Culpa,13
+Nuevo Testamento,Romanos,Arrepentimiento,12
+Nuevo Testamento,Hebreos,Arrepentimiento,11
+Nuevo Testamento,Marcos,Culpa,11
+Nuevo Testamento,2 Corintios,Arrepentimiento,10
+Nuevo Testamento,Santiago,Culpa,9
+Nuevo Testamento,2 Pedro,Culpa,8
+Nuevo Testamento,1 Pedro,Culpa,7
+Nuevo Testamento,2 Corintios,Culpa,6
+Nuevo Testamento,Efesios,Culpa,6
+Nuevo Testamento,1 Pedro,Arrepentimiento,5
+Nuevo Testamento,2 Tesalonicenses,Culpa,5
+Nuevo Testamento,Colosenses,Culpa,5
+Nuevo Testamento,1 Timoteo,Culpa,4
+Nuevo Testamento,2 Pedro,Arrepentimiento,4
+Nuevo Testamento,Gálatas,Arrepentimiento,4
+Nuevo Testamento,1 Juan,Arrepentimiento,3
+Nuevo Testamento,1 Tesalonicenses,Arrepentimiento,3
+Nuevo Testamento,1 Tesalonicenses,Culpa,3
+Nuevo Testamento,2 Timoteo,Arrepentimiento,3
+Nuevo Testamento,Gálatas,Culpa,3
+Nuevo Testamento,Santiago,Arrepentimiento,3
+Nuevo Testamento,Tito,Culpa,3
+Nuevo Testamento,1 Timoteo,Arrepentimiento,2
+Nuevo Testamento,2 Timoteo,Culpa,2
+Nuevo Testamento,Filipenses,Arrepentimiento,2
+Nuevo Testamento,Filipenses,Culpa,2
+Nuevo Testamento,1 Corintios,Arrepentimiento,1
+Nuevo Testamento,Colosenses,Arrepentimiento,1
+Nuevo Testamento,Filemón,Arrepentimiento,1
+Nuevo Testamento,Judas,Arrepentimiento,1
+Nuevo Testamento,Judas,Culpa,1
