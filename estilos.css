@@ -1,0 +1,36 @@
+ Ajuste general del tamaño de fuente para que el contenido entre mejor en pantalla 
+.reveal section {
+  font-size 85%;
+  line-height 1.4;
+}
+
+ Estilo para que los encabezados grandes no desborden 
+.reveal h1, 
+.reveal h2, 
+.reveal h3 {
+  word-wrap break-word;
+  font-weight 700;
+  line-height 1.2;
+}
+
+ Permitir scroll interno en secciones largas como tablas o código 
+.scrollable {
+  max-height 500px;
+  overflow-y auto;
+  padding-right 1rem;
+}
+
+ Ajustes para el código 
+.reveal pre code {
+  font-size 0.9em;
+}
+
+ Márgenes más compactos 
+.reveal .slides {
+  margin 0 auto;
+}
+
+ Tamaño mínimo de slide para prevenir desbordes 
+.reveal .slide-background-content {
+  min-height 90%;
+}
