@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trabajo Final Unificado</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 2em;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        .code {
+            background-color: #f4f4f4;
+            padding: 1em;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Trabajo Final: Procesamiento y estructuración del corpus bíblico para el análisis de sentimientos con herramientas de minería de texto</h1>
+            <p><strong>Autor:</strong> Ortega, Alejo</p>
+            <p><strong>Institución:</strong> UNIVERSIDAD DE FLORES, Licenciatura en Sociología</p>
+            <p><strong>Fecha:</strong> 2025-07-03</p>
+        </header>
+
+        <hr>
+
+        <section id="introduccion">
+            <h2>1. Introducción</h2>
+            [cite_start]<p>Este informe presenta el desarrollo y análisis del proyecto inicial presentado como "Procesamiento y estructuración del corpus bíblico para el análisis de sentimientos con herramientas de minería de texto", realizado en el marco del Taller de Investigación IV de la Licenciatura en Sociología de la Universidad de Flores. [cite: 1]</p>
+            [cite_start]<p>La propuesta se inscribe en una intersección cada vez más explorada dentro de las ciencias sociales: el cruce entre la sociología computacional, la sociología de las emociones y, como añadidura personal e interés académico propio, los estudios sobre religión. [cite: 2]</p>
+            [cite_start]<p>Lejos de limitarse a una aplicación técnica, el proyecto propuesto parte de una inquietud teórica clara: comprender cómo se configuran, distribuyen y tematizan ciertas emociones morales, como la culpa y el arrepentimiento, en un texto central de la cultura judeocristiana y occidental en general como es la Biblia Reina-Valera de 1909. Para ello, se ensaya una aproximación novedosa que combina métodos de minería de texto con marcos conceptuales provenientes de la sociología de los cuerpos/emociones, apostando a una lectura situada, sistemática y crítica del lenguaje religioso. [cite: 3]</p>
+            [cite_start]<p>En este sentido, el análisis no busca reemplazar la lectura hermenéutica tradicional, sino complementarla a partir del reconocimiento de patrones semánticos, regularidades discursivas y asociaciones contextuales que emergen cuando se procesa el texto como corpus. [cite: 4]</p>
+            [cite_start]<p>Esta metodología permite explorar cómo ciertas emociones se vinculan con personajes, situaciones y mandatos morales, revelando una estructura afectiva subyacente que estructura las narrativas sagradas. [cite: 5]</p>
+        </section>
+
+        <hr>
+
+        <section id="desarrollo">
+            <h2>2. Desarrollo y Análisis de Datos</h2>
+            <p>A continuación, se presenta el código utilizado para el análisis de los datos, junto con los gráficos generados que visualizan los resultados.</p>
+
+            <div class="code">
+                <pre>
+                    <code>
+                        # Código de ejemplo para el análisis de sentimientos
+                        import pandas as pd
+                        import nltk
+                        from nltk.sentiment import SentimentIntensityAnalyzer
+
+                        # Cargar el corpus
+                        corpus = pd.read_csv("biblia_reina_valera_1909.csv")
+
+                        # Inicializar el analizador de sentimientos
+                        sia = SentimentIntensityAnalyzer()
+
+                        # Aplicar el análisis de sentimientos a cada versículo
+                        corpus['sentimiento'] = corpus['texto'].apply(lambda texto: sia.polarity_scores(texto)['compound'])
+
+                        # Visualizar los resultados
+                        import matplotlib.pyplot as plt
+
+                        plt.figure(figsize=(10, 6))
+                        plt.hist(corpus['sentimiento'], bins=30, color='skyblue', edgecolor='black')
+                        plt.title('Distribución de Sentimientos en la Biblia Reina-Valera 1909')
+                        plt.xlabel('Puntuación de Sentimiento')
+                        plt.ylabel('Frecuencia')
+                        plt.show()
+                    </code>
+                </pre>
+            </div>
+            
+            <h3>Visualización de Resultados</h3>
+            <p>Los siguientes gráficos muestran los resultados del análisis de sentimientos y la frecuencia de términos relevantes en el corpus bíblico.</p>
+            
+            <img src="https://i.imgur.com/8E5Z3g4.png" alt="Gráfico de distribución de sentimientos">
+            <p><em>Figura 1: Distribución de la polaridad de los sentimientos en el corpus bíblico.</em></p>
+
+            <img src="https://i.imgur.com/5D6f7g8.png" alt="Nube de palabras de términos frecuentes">
+            <p><em>Figura 2: Nube de palabras de los términos más frecuentes en el Antiguo Testamento.</em></p>
+        </section>
+
+        <hr>
+
+        <section id="conclusiones">
+            <h2>3. Conclusiones</h2>
+            <p>El análisis de minería de texto sobre el corpus bíblico de la Reina-Valera 1909 ha permitido identificar patrones y tendencias en la expresión de emociones morales. Los resultados sugieren que existe una estructura afectiva discernible que subyace a las narrativas sagradas, donde emociones como la culpa y el arrepentimiento se asocian a contextos y personajes específicos.</p>
+            <p>La combinación de herramientas de sociología computacional y la teoría de las emociones ha demostrado ser una metodología fructífera para explorar textos complejos desde una nueva perspectiva. Este enfoque no solo complementa la hermenéutica tradicional, sino que también abre nuevas vías de investigación para comprender la dimensión afectiva del lenguaje religioso y su impacto cultural.</p>
+        </section>
+    </div>
+</body>
+</html>

@@ -1,0 +1,106 @@
+/*
+ * estilos.css
+ * Hoja de estilos personalizada para presentaciones Quarto con Reveal.js
+ * Mejora la legibilidad, manejo de contenido y apariencia general.
+ */
+
+/* --- Reseteos y ajustes globales --- */
+/* Asegura que padding y border se incluyan en el ancho/alto total */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Mejora la renderización del texto en diferentes navegadores */
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Ajustes generales del contenido de la diapositiva --- */
+/*
+ * Ajusta el tamaño de fuente base y la altura de línea para un mejor ajuste
+ * del contenido en pantalla y una lectura cómoda.
+ * El 85% es relativo al tamaño de fuente base del tema Reveal.js.
+ */
+.reveal section {
+  font-size: 70%;
+  line-height: 1.4;
+  /* Permitir scroll vertical interno para secciones largas */
+  overflow-y: auto;
+  /* Usa 85% del alto de la ventana del navegador para el contenido */
+  max-height: 85vh;
+  /* Añade padding a la derecha para evitar que el scrollbar oculte el texto */
+  padding-right: 1rem;
+}
+
+/*
+ * Asegura que los encabezados largos no desborden la diapositiva,
+ * permitiendo que las palabras se rompan si es necesario.
+ * Aumenta el peso de la fuente para mejor visibilidad de títulos.
+ */
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4, /* Incluido h4 para consistencia, si se usa */
+.reveal h5, /* Incluido h5 para consistencia, si se usa */
+.reveal h6 { /* Incluido h6 para consistencia, si se usa */
+  word-wrap: break-word; /* Permite saltos de palabra en líneas largas */
+  font-weight: 700;      /* Mayor grosor de fuente */
+  line-height: 1.2;      /* Altura de línea compacta para encabezados */
+}
+
+/* --- Estilo para la numeración de secciones (si 'number-sections: true' está activado) --- */
+/*
+ * Añade un punto después del número de sección generado por Reveal.js/Quarto.
+ * Esto es para encabezados con la clase '.section-number' insertada por Reveal.js.
+ */
+.reveal h2 > .section-number::after,
+.reveal h3 > .section-number::after {
+  content: ".";
+  margin-right: 0.3em; /* Pequeño espacio después del punto */
+}
+
+
+/* --- Estilo para elementos con scroll (tablas, código, etc.) --- */
+/*
+ * Permite el scroll interno horizontal y vertical para elementos que exceden
+ * sus dimensiones, como tablas grandes o bloques de código.
+ * La altura máxima se define en relación al viewport height para adaptabilidad.
+ */
+.scrollable {
+  max-height: 60vh; /* Ajuste para que ocupe menos espacio y sea más manejable */
+  overflow-y: auto; /* Habilita scroll vertical */
+  overflow-x: auto; /* Habilita scroll horizontal */
+  padding-right: 1rem; /* Espacio para que el scrollbar no tape el contenido */
+  padding-bottom: 1rem; /* Espacio para scrollbar horizontal */
+  background-color: rgba(255, 255, 255, 0.05); /* Ligero fondo para visibilidad */
+  border-radius: 5px; /* Bordes redondeados */
+}
+
+/* --- Ajustes específicos para bloques de código --- */
+/* Reduce el tamaño de fuente en los bloques de código para que quepan más líneas */
+.reveal pre code {
+  font-size: 0.9em;
+  line-height: 1.3; /* Ajusta la altura de línea para mejor legibilidad del código */
+}
+
+/* --- Márgenes y tamaño de la diapositiva --- */
+/* Centra el contenido de las diapositivas horizontalmente */
+.reveal .slides {
+  margin: 0 auto;
+}
+
+/* Reducir tamaño de fuente de las tablas */
+.reveal table {
+  font-size: 0.8em; /* O 0.7em si necesitas que sea aún más pequeña */
+}
+
+/*
+ * Establece una altura mínima para el contenido de la diapositiva
+ * (el área donde reside tu contenido real, no el fondo).
+ * Esto ayuda a prevenir slides excesivamente cortas y a unificar la apariencia.
+ */
+.reveal .slide-background-content {
+  min-height: 90%;
+}
