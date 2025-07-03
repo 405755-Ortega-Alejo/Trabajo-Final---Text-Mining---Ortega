@@ -43,25 +43,6 @@ Figuras como **David** y el **pueblo de Israel** son centrales en las narrativas
 git clone https://github.com/405755-Ortega-Alejo/Trabajo-Final---Text-Mining---Ortega.git
 cd Trabajo-Final---Text-Mining---Ortega
 ```
-
-### 📦 Instalar Paquetes Requeridos
-
-Abre el proyecto en RStudio (haciendo doble clic en `Trabajo-Final---Text-Mining---Ortega.Rproj`) y ejecuta el siguiente comando en la consola de R para instalar todas las dependencias necesarias:
-
-```r
-install.packages(c(
-  "readr", "dplyr", "stringr", "tidytext", "udpipe", "ggplot2",
-  "ggwordcloud", "igraph", "ggraph", "textdata", "tm", "stopwords",
-  "widyr", "future", "future.apply", "patchwork", "purrr", "tidyverse"
-))
-```
-
-### ▶️ Ejecutar el Script de Análisis
-```r
-source("scripts/01_analisis_sentimientos_biblia.R")
-```
->> 📌 Nota: El proceso de lematización es computacionalmente intensivo. El script utiliza procesamiento paralelo para acelerar el análisis, pero aun así puede tardar varios minutos en completarse. Se mostrarán mensajes en consola con el progreso.
-
 ---
 
 ## 📁 Estructura del Repositorio
@@ -85,23 +66,9 @@ source("scripts/01_analisis_sentimientos_biblia.R")
 ```
 
 ---
-
-## 📄 Descripción de los Datos
-
-### 📥 Datos Brutos
+## 📥 Datos Brutos
 
 - `data/raw/rv_1909.txt`:  
   El texto completo de la Santa Biblia, versión **Reina-Valera 1909**.  
   Este es el corpus de entrada para todo el análisis.
 ---
-### 📊 Datos Procesados y Resultados
-
-Los siguientes archivos son generados por el script `scripts/01_analisis_sentimientos_biblia.R` y se almacenan en la carpeta `output/data_processed/`.
-
-| Archivo                              | Descripción                                                                                      |
-|--------------------------------------|--------------------------------------------------------------------------------------------------|
-| `biblia_lemas_final.csv`             | El corpus completo, procesado, tokenizado y lematizado, con una palabra (lema) por fila.         |
-| `frecuencia_comparativa_testamento.csv` | Tabla con la frecuencia absoluta y normalizada (por cada 10.000 palabras) de los sentimientos de culpa y arrepentimiento por Testamento. |
-| `frecuencia_sentimiento_por_libro.csv` | Frecuencia absoluta de los términos de sentimiento para cada libro de la Biblia.                |
-| `asociaciones_demograficas_pivot.csv` | Tabla pivote que muestra las 10 principales figuras o grupos demográficos asociados con la culpa y el arrepentimiento en cada Testamento. |
-| `lexico_sentimientos_custom.csv`     | Léxico personalizado creado para identificar términos relacionados con culpa y arrepentimiento. |
