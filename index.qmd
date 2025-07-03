@@ -1,31 +1,33 @@
 ---
-title: "Trabajo Final: 
-        Análisis de Sentimientos en Textos Bíblicos"
-subtitle: "Culpa y Arrepentimiento en la Biblia (Reina-Valera 1909)"
-author: 
+title: "Trabajo Final"
+subtitle: |
+  Análisis de Sentimientos en Textos Bíblicos: Culpa y Arrepentimiento en la Biblia (Reina-Valera 1909)
+author:
   - name: "Ortega, Alejo"
     affiliation: "Licenciatura en Sociología — UNVM | IAPCS"
 institute: "Universidad de Flores"
-date: "Junio 2025"
-
-format: 
+date: "07/03/2025"
+format:
   revealjs:
-    slide-level: 1  
-    css: estilos.css             
+    slide-level: 1
+    slide-number: c/t
     toc: false
-    number-sections: true        
-    code-fold: false              
-    code-tools: true             
-    theme: league               
-    transition: slide            
-    highlight-style: haddok       
-    smooth-scroll: true          
-    self-contained: true   
+    css: estilos.css
+    number-sections: true
+    code-fold: false
+    code-tools: true
+    theme: simple
+    transition: slide
+    highlight-style: arrow-light
+    smooth-scroll: true
+    self-contained-math: true
     height: 900
-    width: 1280
-    margin: 0.2    
-lang: es                        
-editor: visual                   
+    width: 1024
+    margin: 0.1
+    navigation-mode: linear
+    controls: true
+lang: es
+editor: visual
 output-file: "informe_text_mining_ortega"
 ---
 
@@ -37,44 +39,60 @@ knitr::opts_chunk$set(
   echo = TRUE,
   warning = FALSE,
   message = FALSE,
-  fig.width = 7,
-  fig.height = 4.5,
+  fig.width = 5,
+  fig.height = 3,
   fig.align = "center"
 )
 ```
 
-## Instalación de Paquetes
+------------------------------------------------------------------------
 
-Se instalan los paquetes requeridos para el análisis de texto, manipulación de datos y visualización.
+# Presentación y configuración incial
+
+Este trabajo presenta un análisis computacional de sentimientos aplicado a un `corpus` religioso de alto valor simbólico y cultural: la **Biblia**, en su versión **Reina-Valera**, **1909**. El objetivo central es explorar dos emociones teológicas fundamentales —la culpa y el arrepentimiento— a partir de su apariciones en el `Antiguo` y `Nuevo Testamento`.
+
+------------------------------------------------------------------------
+
+## Instalación de paquetes
+
+Para llevar adelante el análisis, se requiere instalar un conjunto de paquetes de R que brindan soporte para lectura de archivos, manipulación de datos, análisis textual, lematización, visualización y paralelización de tareas.
+
+> ⚠️ Este bloque debe ejecutarse solo una vez en el entorno local.
 
 ```{r}
 #| label: instalar-paquetes
 #| eval: false
 
-# Este chunk instala los paquetes necesarios. 
-# Se recomienda ejecutarlo solo una vez.
 install.packages(c(
   "readr", "dplyr", "stringr", "tidytext", "udpipe", "ggplot2", 
   "ggwordcloud", "igraph", "ggraph", "textdata", "tm", "stopwords", 
-  "widyr", "future", "future.apply", "patchwork", "tidyverse"
-))
+  "widyr", "future", "future.apply", "patchwork", "tidyverse", "ggwordcloud", "spacyr", "syuzhet")
+  )
+
+message("Paquetes instalados.")
 ```
----
 
-## Carga de Librerías
+------------------------------------------------------------------------
 
-Se cargan las librerías que se utilizarán a lo largo del documento.
+## Carga de librerías
+
+Una vez instalados los paquetes, se cargan las librerías necesarias para la sesión actual. Estas permiten realizar tareas clave como **tokenización**, **limpieza**, **detección** **de sentimientos**, construcción de redes semánticas y generación de gráficos interactivos y estáticos. Se destacan:
+
+-   `tidytext` y `udpipe` para análisis léxico y lingüístico.
+
+-   `ggplot2`, `ggraph` y `ggwordcloud` para visualización.
+
+-   `widyr` e `igraph` para coocurrencias y redes.
+
+-   `future` y `future.apply` para paralelizar procesos como la lematización.
 
 ```{r}
 #| label: cargar-librerias
 
-# Cargar librerías para la sesión actual
-library(readr)
-library(dplyr)
-library(stringr)
+library(tidyverse)
 library(tidytext)
+library(treemapify)
 library(udpipe)
-library(ggplot2)
 library(ggwordcloud)
 library(igraph)
 library(ggraph)
@@ -84,40 +102,62 @@ library(widyr)
 library(future)
 library(future.apply)
 library(tm)
-library(purrr)
-library(tidyverse)
+library(spacyr)
+library(igraph)
+library(ggraph)
+library(syuzhet)
+library(here)
 library(patchwork)
+
+message("Librerías cargadas.")
 ```
----
+
+------------------------------------------------------------------------
 
 # Carga y Estructuración del Corpus
 
-El corpus textual, la Biblia Reina-Valera 1909, se carga en memoria y se estructura en un formato tabular para facilitar su procesamiento.
+El `corpus` textual, la **Biblia Reina-Valera 1909**, se carga en memoria desde un documento `.txt` y se estructura en un formato tabular para facilitar su procesamiento.
 
-## Lectura y Limpieza Inicial
+------------------------------------------------------------------------
+
+## Lectura y limpieza inicial
 
 Se lee el archivo `.txt` y se eliminan las líneas de metadatos iniciales.
 
 ```{r}
 #| label: cargar-corpus
+#| echo: true
 
 # Definir la ruta al archivo del corpus
-ruta_biblia <- "data/raw/rv_1909.txt"
+ruta_biblia <- here::here("data", "raw", "rv_1909.txt")
 
 # Leer el archivo línea por línea, omitiendo líneas vacías
-lineas_biblia_raw <- read_lines(ruta_biblia, skip_empty_rows = TRUE)
+if (!file.exists(ruta_biblia)) {
+  stop(paste("No se encontró el archivo en la ruta especificada:", ruta_biblia))
+}
+lineas_biblia_raw <- readr::read_lines(ruta_biblia, skip_empty_rows = TRUE)
 
-# El archivo rv_1909.txt tiene 3 líneas de metadatos al inicio que deben ser omitidas
-lineas_biblia <- lineas_biblia_raw[-(1:3)]
+# El archivo rv_1909.txt tiene 2 líneas de metadatos al inicio que deben ser omitidas
+lineas_biblia <- lineas_biblia_raw[-(1:2)]
+
+message("Limpieza terminada.")
 ```
----
+
+------------------------------------------------------------------------
 
 ## Parseo de Versículos
 
-Se utiliza una expresión regular para identificar y extraer las partes de cada versículo: Libro, Capítulo, Versículo y Texto.
+Se utiliza una expresión regular para identificar y extraer las partes de cada versículo: `Libro`, `Capítulo`, `Versículo` y `Texto`. Para estructurar adecuadamente el `corpus` bíblico, se aplica una expresión regular (`regex`) diseñada específicamente para identificar y separar los elementos clave de cada línea del texto: el nombre del `libro`, el número de `capítulo`, el número de `versículo` y el `contenido` textual del versículo.
+
+-   Detecta nombres de `libros`, incluso si comienzan con números (`1 Samuel`, `2 Corintios`).
+
+-   Extrae el número de `capítulo` y `versículo` (formato `Capítulo:Versículo`).
+
+-   Aísla el contenido del `versículo` como texto.
 
 ```{r}
 #| label: parsear-versiculos
+#| echo: true
 
 # Expresión regular para parsear Libro, Capítulo, Versículo y Texto
 regex_biblia <- "^([1-3]?\\s*[A-Za-záéíóúñÑ]+(?:\\s[A-Za-záéíóúñÑ]+)*)\\s+(\\d+):(\\d+)\\s+(.*)$"
@@ -129,47 +169,38 @@ lineas_validas <- lineas_biblia[lineas_validas_indices]
 # Extraer las partes de cada línea usando la regex
 partes_biblia <- str_match(lineas_validas, regex_biblia)
 
-# Convertir la matriz de resultados en un tibble (data frame mejorado)
+# Convertir la matriz de resultados en un tibble (DF mejorado)
 biblia_df_temp <- tibble(
   Libro_Parsed = str_trim(partes_biblia[,2]),
   Capitulo_Parsed = as.integer(partes_biblia[,3]),
   Versiculo_Parsed = as.integer(partes_biblia[,4]),
   Texto_Parsed = partes_biblia[,5]
 )
+
+message("Parseo de la Biblia creado.")
 ```
----
 
-## Creación del DataFrame Final
+------------------------------------------------------------------------
 
-Se clasifica cada libro en Antiguo o Nuevo Testamento y se crea el `data.frame` final, eliminando cualquier libro no clasificado.
+## Creación del Data Frame
+
+Luego de extraer, limpiar y estructurar la información del `corpus` bíblico, se procede a clasificar cada uno de los `versículos` según su procedencia en el `Antiguo Testamento` o el `Nuevo Testamento`, en función del `libro` al que pertenecen.
 
 ```{r}
 #| label: crear-dataframe
+#| echo: true
 
 # Definir listas de libros para el Antiguo y Nuevo Testamento
-AT_libros <- c("Génesis", "Éxodo", "Levítico", "Números", "Deuteronomio",
-               "Josué", "Jueces", "Rut", "1 Samuel", "2 Samuel", "1 Reyes", "2 Reyes",
-               "1 Crónicas", "2 Crónicas", "Esdras", "Nehemías", "Ester", "Job",
-               "Salmos", "Proverbios", "Eclesiastés", "Cantares",
-               "Isaías", "Jeremías", "Lamentaciones", "Ezequiel", "Daniel",
-               "Oseas", "Joel", "Amós", "Abdías", "Jonás", "Miqueas",
-               "Nahúm", "Habacuc", "Sofonías", "Hageo", "Zacarías", "Malaquías")
+AT_libros <- c("Génesis", "Éxodo", "Levítico", "Números", "Deuteronomio", "Josué", "Jueces", "Rut", "1 Samuel", "2 Samuel", "1 Reyes", "2 Reyes", "1 Crónicas", "2 Crónicas", "Esdras", "Nehemías", "Tobías", "Judit", "Esther", "1 Macabeos", "2 Macabeos", "Job", "Salmos", "Proverbios", "Canción de canciones", "Sabiduría", "Ecclesiastés", "Isaías", "Jeremías", "Lamentaciones", "Baruc", "Ezequiel", "Daniel", "Oseas", "Joel", "Amós", "Abdías", "Jonás", "Miqueas", "Nahum", "Habacuc", "Sofonías", "Haggeo", "Zacarías", "Malaquías")
 
-NT_libros <- c("Mateo", "Marcos", "Lucas", "Juan", "Hechos", "Romanos",
-               "1 Corintios", "2 Corintios", "Gálatas", "Efesios", "Filipenses",
-               "Colosenses", "1 Tesalonicenses", "2 Tesalonicenses", "1 Timoteo",
-               "2 Timoteo", "Tito", "Filemón", "Hebreos", "Santiago", "1 Pedro",
-               "2 Pedro", "1 Juan", "2 Juan", "3 Juan", "Judas", "Apocalipsis")
+NT_libros <- c("Mateo", "Marcos", "Lucas", "Juan", "Hechos", "Romanos", "1 Corintios", "2 Corintios", "Gálatas", "Efesios","Filipenses", "Colosenses", "1 Tesalonicenses", "2 Tesalonicenses", "1 Timoteo", "2 Timoteo", "Tito", "Filemón", "Hebreos", "Santiago", "1 Pedro", "2 Pedro", "1 Juan", "2 Juan", "3 Juan", "Judas", "Apocalipsis", "Revelación")
 
-# Crear el data frame final con la estructura deseada
+# Crear el DF final con la estructura deseada
 biblia_df <- biblia_df_temp %>%
-  # Ajuste para "Cantar de los Cantares"
-  mutate(Libro_Parsed = if_else(Libro_Parsed == "Cantar de los Cantares", "Cantares", Libro_Parsed)) %>%
   mutate(
     Testamento = case_when(
       Libro_Parsed %in% AT_libros ~ "Antiguo Testamento",
-      Libro_Parsed %in% NT_libros ~ "Nuevo Testamento",
-      TRUE ~ "Desconocido"
+      Libro_Parsed %in% NT_libros ~ "Nuevo Testamento"
     ),
     Libro = Libro_Parsed,
     Capitulo = Capitulo_Parsed,
@@ -178,39 +209,81 @@ biblia_df <- biblia_df_temp %>%
     ID_Versiculo = paste(Libro_Parsed, Capitulo_Parsed, Versiculo_Parsed, sep = "_")
   ) %>%
   select(ID_Versiculo, Testamento, Libro, Capitulo, Versiculo, Texto) %>%
-  # Filtrar para eliminar cualquier testamento "Desconocido"
-  filter(Testamento != "Desconocido")
+  filter(!is.na(Testamento))
 
-message("DataFrame de la Biblia creado y filtrado.")
+message("DF de la Biblia creado y filtrado.")
 ```
----
+
+------------------------------------------------------------------------
+
+## Visualización final
+
+A continuación se presentan las primeras filas del `data frame` consolidado, que contienen los textos bíblicos ya clasificados y listos para el análisis posterior.
+
+```{r}
+#| label: imprimir-biblia-df
+#| echo: true
+#| fig-cap: "1. Data Frame de procesamiento"
+#| results: asis
+
+knitr::kable(
+  head(biblia_df, 10),
+  caption = "Textos Bíblicos Procesados",
+  align = "c"
+)
+```
+
+------------------------------------------------------------------------
 
 # Preprocesamiento Avanzado del Texto
 
-Se aplican técnicas estándar de preprocesamiento de texto para limpiar y normalizar el corpus.
+Para garantizar un análisis de texto riguroso y fiable, se implementan técnicas estándar de procesamiento de lenguaje natural (`PLN`) con el fin de limpiar, estructurar y normalizar el `corpus` textual. Estas transformaciones permiten reducir el **ruido** **lingüístico** y obtener una representación más significativa de los datos textuales.
 
-## Limpieza de Texto
+------------------------------------------------------------------------
 
-Se convierte el texto a minúsculas y se eliminan signos de puntuación, números y espacios extra.
+## Limpieza de texto
+
+Este paso inicial tiene como objetivo homogeneizar el contenido textual, eliminando componentes irrelevantes para el análisis semántico posterior. Las transformaciones aplicadas son:
+
+✅ **Conversión a minúsculas** `tolower`**:** evita que palabras idénticas con distinta capitalización se contabilicen como diferentes (por ejemplo, *"Dios"* vs. *"dios"*).
+
+✅ **Eliminación de signos de puntuación** `str_remove_all("[[:punct:]]")`**:** quita comas, puntos, signos de interrogación, etc., que no aportan valor semántico al nivel de palabra.
+
+✅ **Eliminación de números** `str_remove_all("\d+")`**:** se suprimen dígitos que en este `corpus` no representan conceptos teológicos relevantes.
+
+✅ **Espacios redundantes** `str_squish()`**:** elimina espacios múltiples o innecesarios entre palabras.
+
+✅ **Tildes** `"Latin-ASCII"`**:** elimina las tildes en todas las palabras.
 
 ```{r}
 #| label: limpieza-texto
+#| echo: true
 
 biblia_df_procesado <- biblia_df %>%
   mutate(
     Texto_Procesado = tolower(Texto),
+    Texto_Procesado = stringi::stri_trans_general(Texto_Procesado, "Latin-ASCII"),
     Texto_Procesado = str_remove_all(Texto_Procesado, "[[:punct:]]"),
     Texto_Procesado = str_remove_all(Texto_Procesado, "\\d+"),
     Texto_Procesado = str_squish(Texto_Procesado)
   )
+
+message("Corpus preprocesado y listo.")
 ```
+
+------------------------------------------------------------------------
 
 ## Tokenización y Stop Words
 
-Se convierte el texto en palabras (tokens) y se eliminan las palabras comunes sin significado (stop words).
+En esta etapa, el texto es descompuesto en unidades mínimas de análisis: las palabras individuales o tokens.
+
+✂️ **Tokenización:** el procedimiento convierte cada `versículo` en una lista de palabras individuales, lo que permite analizar su **frecuencia**, **contexto**, y **coocurrencia**. Se conserva información contextual como `libro`, `capítulo` y `testamento`, facilitando análisis comparativos.
+
+🚫 **Stop Words:** las stop words son palabras extremadamente frecuentes (como “el”, “y”, “a”) que no aportan valor semántico en la mayoría de los análisis. Estas se eliminan utilizando una lista predefinida en español (**fuente**: snowball), con el fin de focalizar el análisis en términos significativos.
 
 ```{r}
 #| label: tokenizacion-stopwords
+#| echo: true
 
 # Tokenización
 biblia_tokens <- biblia_df_procesado %>%
@@ -223,43 +296,201 @@ stopwords_df <- tibble(Palabra = lista_stopwords_es)
 
 biblia_tokens_sin_stopwords <- biblia_tokens %>%
   anti_join(stopwords_df, by = "Palabra")
+
+message("Corpus preprocesado y listo.")
 ```
+
+------------------------------------------------------------------------
+
+## Visualización de Tokens sin Stop Words
+
+A continuación, se muestra una vista preliminar de las primeras **10 filas** del data frame resultante. Cada fila representa una palabra significativa, lista para ser utilizada en análisis posteriores.
+
+```{r}
+#| label: imprimir-tokens-sin-stopwords
+#| echo: true
+#| results: asis
+
+knitr::kable(
+  head(biblia_tokens_sin_stopwords, 10),
+  caption = "Data Frame de Tokens sin Stop Words (primeras 10 filas)"
+)
+```
+
+------------------------------------------------------------------------
+
+# Análisis de sentimientos con léxico NRC
+
+Este bloque implementa un análisis de sentimientos utilizando el léxico `NRC` en su versión en español, aplicado sobre el `corpus` bíblico previamente normalizado. El objetivo es cuantificar y comparar la distribución de emociones (como **ira**, **miedo**, **confianza**, **alegría**, **tristeza**, entre otras) con el fin de obtener una primera aproximación a las diferencias afectivas entre el `Antiguo` y el `Nuevo Testamento`.
+
+```{r}
+#| label: analisis-nrc
+#| echo: true
+
+# Obtener puntuaciones de sentimiento usando el léxico NRC en español
+# Se aplica sobre la columna con el texto ya limpio y preprocesado
+nrc_sentimientos <- get_nrc_sentiment(
+  biblia_df_procesado$Texto_Procesado, 
+  language = "spanish"
+  )
+
+# Combinar los resultados con el dataframe procesado
+biblia_nrc <- bind_cols(biblia_df_procesado, nrc_sentimientos)
+
+# Resumir los datos por Testamento para análisis comparativo
+biblia_nrc_summary <- biblia_nrc %>%
+  group_by(Testamento) %>%
+  # Sumar los puntajes de cada emoción para cada Testamento.
+  summarise(across(anger:positive, sum, .names = "total_{.col}")) %>%
+  # Reestructurar los datos para facilitar la visualización
+  pivot_longer(
+    cols = -Testamento, 
+    names_to = "Emocion", 
+    values_to = "Conteo",
+    names_prefix = "total_"
+    ) %>%
+  # Unir con el conteo total de versículos por testamento para normalizar
+  left_join(
+    biblia_df %>% count(Testamento, name = "Total_Versiculos"), 
+    by = "Testamento"
+    ) %>%
+  # Calcular la frecuencia por cada 1,000 versículos para una comparación justa
+  mutate(
+    Frecuencia_Normalizada = (Conteo / Total_Versiculos) * 1000,
+    # Capitalizar la primera letra de cada emoción para el gráfico
+    Emocion = str_to_title(Emocion) 
+    )
+
+message("Análisis NRC finalizado.")
+```
+
+------------------------------------------------------------------------
+
+## Visualización de resultados
+
+Este bloque construye una representación gráfica de la distribución emocional del corpus bíblico, utilizando los resultados obtenidos a partir del léxico NRC. Para facilitar la interpretación, se excluyen las categorías de polaridad general (**Positive** y **Negative**) y se focaliza en las **8 emociones básicas** propuestas por el léxico: **ira**, **anticipación**, **repulsión**, **miedo**, **alegría**, **tristeza**, **sorpresa** y **confianza**.
+
+```{r}
+#| label: analisis-nrc-visualización
+#| echo: true
+#| results: asis
+#| fig-cap: "2. Perfil Emocional Comparativo de los Testamentos"
+
+biblia_nrc_summary_es <- biblia_nrc_summary %>%
+  mutate(
+    Emocion = recode(Emocion,
+      "Anger" = "Ira",
+      "Anticipation" = "Anticipación",
+      "Disgust" = "Repulsión",
+      "Fear" = "Miedo",
+      "Joy" = "Alegría",
+      "Sadness" = "Tristeza",
+      "Surprise" = "Sorpresa",
+      "Trust" = "Confianza",
+      "Positive" = "Positividad",
+      "Negative" = "Negatividad"
+    )
+  )
+
+# Se excluyen las categorías "Positive" y "Negative" para centrarse en las 8 emociones básicas
+top_emociones <- biblia_nrc_summary %>%
+  group_by(Testamento) %>%
+  slice_max(Frecuencia_Normalizada, n = 5) %>%
+  ungroup()
+
+ggplot(
+  biblia_nrc_summary_es %>% filter(!Emocion %in% c("Positive", "Negative")),
+  aes(x = reorder(Emocion, Frecuencia_Normalizada), y = Frecuencia_Normalizada, fill = Testamento)
+  ) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  labs(
+    title = "Perfil Emocional Comparativo de los Testamentos",
+    subtitle = "Frecuencia de emociones por 1,000 versículos",
+    x = "Emoción",
+    y = "Frecuencia Normalizada",
+    fill = "Testamento"
+  ) +
+  theme_minimal(base_size = 14) +
+  scale_fill_brewer(palette = "Set2")
+```
+
+------------------------------------------------------------------------
 
 # Lematización Paralela
 
-Para agrupar palabras con la misma raíz (ej. "pecado", "pecar"), se realiza una lematización. Este proceso se acelera mediante ejecución en paralelo.
+La lematización es un proceso fundamental del análisis de texto que permite agrupar distintas formas flexionadas de una palabra bajo una misma raíz o lema (por ejemplo: `pecado`, `pecar`, `pecando` → `pecar`). Esto contribuye a reducir la dimensionalidad del corpus, mejora la coherencia semántica y optimiza análisis posteriores como clasificación, minería de sentimientos y análisis de frecuencia.
+
+Dado el tamaño del corpus bíblico, la lematización se realiza de manera paralela para aprovechar múltiples núcleos de procesamiento, reduciendo significativamente el tiempo de ejecución.
+
+Ejemplo de lematización:
+
+![](https://seonorth.ca/wp-content/uploads/2022/03/Stemming-and-Lemmatization.jpg){fig-align="center"}
+
+------------------------------------------------------------------------
 
 ## Carga del Modelo UDPipe
 
-Se descarga y carga un modelo pre-entrenado para el español.
+Para lematizar, se utiliza un modelo entrenado con el estándar **Universal Dependencies** (UD) a través de la librería `UDPipe`. En este paso:
+
+1.  Se define un **directorio** local para almacenar el **modelo**.
+
+2.  Se descarga el modelo `spanish-ancora` si aún no está disponible localmente.
+
+3.  Se carga a memoria para ser utilizado en las tareas de **anotación lingüística**.
 
 ```{r}
 #| label: cargar-modelo-udpipe
 
+# Crear carpeta si no existe
 modelo_dir <- "models"
 if (!dir.exists(modelo_dir)) {
   dir.create(modelo_dir)
 }
+
+# Ruta del modelo
 nombre_modelo_udpipe <- file.path(modelo_dir, "spanish-ancora-ud-2.5-191206.udpipe")
 
+# Descargar modelo si no existe
 if (!file.exists(nombre_modelo_udpipe)) {
-  message("Descargando modelo de udpipe para español...")
-  udpipe_download_model(language = "spanish-ancora", model_dir = modelo_dir)
+  message("Intentando descargar el modelo UDPipe para español...")
+  tryCatch({
+    udpipe::udpipe_download_model(language = "spanish-ancora-ud-2.5-191206", model_dir = modelo_dir)
+    message("Descarga exitosa.")
+  }, error = function(e) {
+    stop("Error al descargar el modelo UDPipe. Verificá tu conexión a internet o permisos de escritura.\n", e)
+  })
 }
 
-modelo_udpipe <- udpipe_load_model(file = nombre_modelo_udpipe)
-message("Modelo udpipe cargado.")
+#Cargar modelo con manejo de errores
+modelo_udpipe <- tryCatch({
+  udpipe::udpipe_load_model(file = nombre_modelo_udpipe)
+}, error = function(e) {
+  stop("Error al cargar el modelo UDPipe. Verificá si el archivo está corrupto o mal ubicado.\n", e)
+})
+
+message("Modelo UDPipe cargado correctamente.")
 ```
+
+------------------------------------------------------------------------
 
 ## Ejecución de Lematización en Paralelo
 
-El corpus se divide en lotes y se procesa en paralelo para mayor eficiencia.
+Dado que la lematización es costosa computacionalmente, se aplica una estrategia de paralelización en varios pasos:
+
+a.  **División del corpus en lotes:** el `corpus` se fracciona en bloques de **500 versículos** para permitir su procesamiento independiente y simultáneo.
+
+b.  **Configuración de núcleos:** se detectan los núcleos de procesamiento disponibles (`availableCores()`) y se reserva uno para el sistema operativo.
+
+c.  **Función de anotación con UDPipe:** cada lote es procesado mediante la función udpipe_annotate, que devuelve anotaciones lingüísticas incluyendo el lema, el token original y su categoría gramatical (`POS tag`).
+
+d.  **Consolidación y filtrado:** se unifican los resultados y se filtran por categorías gramaticales relevantes: `sustantivos`, `verbos`, `adjetivos` y `adverbios`. Además, se eliminan los **lemas** que coincidan con `stop words`.
 
 ```{r}
 #| label: lematizacion-paralela
 
 # Preparar lotes
-tamanio_lote <- 1000
+tamanio_lote <- 500
 biblia_df_lotes <- biblia_df_procesado %>%
   mutate(lote_id = ((row_number() - 1) %/% tamanio_lote) + 1) %>%
   group_by(lote_id) %>%
@@ -295,59 +526,227 @@ message("Lematización completada.")
 # Consolidar resultados
 biblia_lemas_df_raw <- bind_rows(resultados_paralelos)
 biblia_lemas_df <- biblia_lemas_df_raw %>%
-  filter(upos %in% c("NOUN", "VERB", "ADJ", "ADV")) %>%
+  filter(upos %in% c("NOUN", "VERB", "ADJ")) %>%
   select(doc_id, token, lemma, upos) %>%
   rename(ID_Versiculo = doc_id, Palabra_Original_Token = token, Lema = lemma, POS_Tag = upos) %>%
   mutate(Lema = tolower(Lema)) %>%
   anti_join(tibble(Lema = lista_stopwords_es), by = "Lema")
-
 biblia_lemas_final_df <- biblia_lemas_df %>%
   left_join(biblia_df %>% select(ID_Versiculo, Testamento, Libro, Capitulo, Versiculo), by = "ID_Versiculo") %>%
   select(ID_Versiculo, Testamento, Libro, Capitulo, Versiculo, Palabra_Original_Token, Lema, POS_Tag)
+
+message("Resultados consolidados.")
 ```
+
+------------------------------------------------------------------------
+
+## Visualización de Lematización
+
+A continuación se muestra una vista preliminar del resultado de la **lematización**, que contiene las formas base (lemas) extraídas del `corpus` bíblico procesado, junto con su información contextual (ubicación en el texto y clase gramatical):
+
+```{r}
+#| label: imprimir-lemas-final 
+#| echo: true 
+#| fig-cap: "Lematización"
+#| results: asis
+
+knitr::kable(
+  head(biblia_lemas_final_df, 20),
+  caption = "Data Frame de Lema Final" 
+  )
+```
+
+------------------------------------------------------------------------
 
 # Construcción del Léxico de Sentimientos
 
-Se crea un léxico personalizado para los sentimientos de "Culpa" y "Arrepentimiento".
+Uno de los pasos clave en el análisis de sentimientos consiste en construir un léxico personalizado que contenga términos asociados con las **emociones** o **categorías afectivas** que se desean estudiar. En este caso, el foco se sitúa en dos emociones centrales: **culpa** y **arrepentimiento**, analizadas en el marco del discurso bíblico.
+
+Según la **Real Academia Española** (RAE), **culpa** se define como:
+
+| *“Imputación a alguien de una determinada acción como consecuencia de su conducta” y, en términos psicológicos, como la “acción u omisión que provoca un sentimiento de responsabilidad por un daño causado”.*
+
+Por su parte, **arrepentimiento** se describe como:
+
+| *“Pesar de haber hecho algo”, así como la enmienda o corrección que se advierte respecto a una acción pasada.*
+
+A partir de estas definiciones, se construye un `léxico` de manera manual y supervisada, incorporando términos que representan con precisión los núcleos semánticos y morales de ambas categorías afectivas. Luego, este conjunto inicial se lematiza automáticamente para capturar sus distintas variantes lingüísticas (por ejemplo, “**pecador**”, “**pecar**”, “**pecado**”).
+
+El resultado es un conjunto curado de palabras que representan cada una de estas **emociones** y que permite detectar su presencia en el texto con mayor precisión, facilitando un análisis afectivo situado, coherente y fundamentado tanto en fuentes lingüísticas como teóricas.
 
 ```{r}
 #| label: construir-lexico
 
-lexico_culpa_terminos <- c("culpa", "culpabilidad", "culpable", "delito", "falta", "pecado", "pecar", "ofensa", "yerro", "error", "infracción", "incumplimiento", "transgresión", "iniquidad", "maldad", "agravio", "responsabilidad", "imprudencia", "omisión", "desliz", "fallo", "tropiezo")
+lexico_sentimientos_biblia <- c(
+  # Términos de Culpa
+  "culpa", "culpabilidad", "culpable", "culposo", "responsabilidad", "iniquidad", "irresponsabilidad", "negligencia", "responsabilizar", "condena", "condenación",
+  
+  # Términos de Arrepentimiento
+  "arrepentimiento", "arrepentir", "arrepentirse", "contrición", "contrito", "penitencia", "penitente", "confesar", "confesión", "enmienda", "enmendar", "expiación", "resarcir", "desagravio", "convertir", "convertirse", "redención", "restitución", "conversión",
 
-lexico_arrepentimiento_terminos <- c("arrepentimiento", "arrepentir", "arrepentirse", "contrición", "contrito", "pesar", "pesadumbre", "remordimiento", "penitencia", "confesar", "confesión", "convertir", "convertirse", "volver", "tornar", "dolor", "aflicción", "compunción", "abatimiento", "agobio")
-
-lematizar_lista_lexico <- function(terminos_lista, modelo) {
-  if (length(terminos_lista) == 0) return(character(0))
-  anotaciones <- udpipe_annotate(modelo, x = terminos_lista, doc_id = seq_along(terminos_lista), parser = "none")
-  as_tibble(anotaciones) %>% filter(upos %in% c("NOUN", "VERB", "ADJ")) %>% pull(lemma) %>% tolower() %>% unique()
-}
-
-lexico_culpa_lemas <- lematizar_lista_lexico(lexico_culpa_terminos, modelo_udpipe)
-lexico_arrepentimiento_lemas <- lematizar_lista_lexico(lexico_arrepentimiento_terminos, modelo_udpipe)
-
-lexico_culpa_lemas <- setdiff(lexico_culpa_lemas, lista_stopwords_es)
-lexico_arrepentimiento_lemas <- setdiff(lexico_arrepentimiento_lemas, lista_stopwords_es)
-
-lexico_sentimientos_df <- bind_rows(
-  tibble(Lema = lexico_culpa_lemas, Sentimiento = "Culpa"),
-  tibble(Lema = lexico_arrepentimiento_lemas, Sentimiento = "Arrepentimiento")
-) %>% distinct()
+  # Términos de solapamiento
+  "remordimiento", "pesar", "pesadumbre", "dolor", "aflicción", "compunción", "humillación", "abatimiento", "quebranto", "autorreproche", "angustia", "tribulación", "conciencia", "conmiseración"
+)
 
 message("Léxico de sentimientos creado.")
 ```
 
+------------------------------------------------------------------------
+
+## Lematización del léxico
+
+Luego de construir un `léxico` unificado que reúne términos asociados tanto al sentimiento de culpa como al de arrepentimiento (basado en definiciones lingüísticas y conceptuales), se procede a su **lematización**. Este paso es fundamental para normalizar las variantes morfológicas de cada palabra y garantizar que todas las formas derivadas sean reconocidas como equivalentes semánticos durante el análisis.
+
+La lematización se realiza utilizando el modelo `UDPipe` previamente cargado, filtrando únicamente aquellas palabras que corresponden a **sustantivos**, **verbos** o **adjetivos**, ya que son las categorías gramaticales que más contribuyen al significado emocional del texto.
+
+Finalmente, se elimina cualquier coincidencia con stopwords en español, para asegurar que el `léxico` resultante contenga solo términos relevantes desde el punto de vista semántico. El resultado es un conjunto **lematizado**, **curado** y **preparado** para ser utilizado en la detección de sentimientos dentro del corpus bíblico.
+
+```{r}
+#| label: lematizar-lexico
+
+# Función de lematización
+lematizar_lista_lexico <- function(terminos_lista, modelo) {
+  if (length(terminos_lista) == 0) return(character(0))
+  anotaciones <- udpipe_annotate(modelo, x = terminos_lista, doc_id = seq_along(terminos_lista), parser = "none")
+  as_tibble(anotaciones) %>%
+    filter(upos %in% c("NOUN", "VERB", "ADJ")) %>%
+    pull(lemma) %>%
+    tolower() %>%
+    unique()
+}
+
+# Lematización
+lexico_sentimientos_lemas <- lematizar_lista_lexico(lexico_sentimientos_biblia, modelo_udpipe)
+
+# Eliminar stopwords por si alguna coincide
+lexico_sentimientos_lemas <- setdiff(lexico_sentimientos_lemas, lista_stopwords_es)
+
+# Crear el DF final del léxico lematizado
+lexico_sentimientos_df <- tibble(
+  Lema = lexico_sentimientos_lemas,
+  Sentimiento = "Culpa/Arrepentimiento"
+)
+
+message("Léxico de sentimientos lematizado y listo.")
+```
+
+------------------------------------------------------------------------
+
+## Data Frame de Léxico
+
+El siguiente cuadro muestra el léxico final utilizado en el análisis. Cada fila representa una palabra lematizada que ha sido previamente **seleccionada**, **normalizada** y **clasificada** según uno de los dos sentimientos en estudio: culpa o arrepentimiento. Esta tabla constituye la base para la detección de emociones en los versículos de la **Biblia**, ya que permite identificar de manera sistemática la presencia de estos términos en el `corpus` procesado.
+
+```{r}
+#| label: mostrar-lexico
+#| echo: true
+#| fig-cap: "Data Frame de Léxico"
+
+knitr::kable(
+  lexico_sentimientos_df,
+  caption = "Léxico Final de Sentimientos Lematizados"
+)
+```
+
+------------------------------------------------------------------------
+
+# Detección de Sentimientos
+
+Para identificar la presencia de los sentimientos de los **sentimientos** en el `corpus` bíblico, se realiza un cruce entre el Data Frame de lemas (`biblia_lemas_final_df`) y el `léxico` de sentimientos construido (`lexico_sentimientos_df`). Este paso permite etiquetar cada **lema** **bíblico** con el **sentimiento** asociado si existe una correspondencia.
+
+```{r}
+#| label: deteccion-sentimientos
+
+# Unir los lemas de la Biblia con el léxico de sentimientos
+biblia_sentimientos_detectados <- biblia_lemas_final_df %>%
+  inner_join(lexico_sentimientos_df, by = "Lema") %>%
+  distinct(ID_Versiculo, Lema, Sentimiento, .keep_all = TRUE)
+
+message("Sentimientos detectados y Data Frame creado.")
+```
+
+------------------------------------------------------------------------
+
+## Visualización de sentimientos detectados
+
+A continuación, se muestran las filas del data frame consolidado que contiene cada `lema` asociado a su **categoría emocional**.
+
+```{r}
+#| label: imprimir-biblia-sentimientos-detectados
+#| echo: true
+#| fig-cap: "Sentimientos detectados"
+
+knitr::kable(
+  head(biblia_sentimientos_detectados, 10),
+  caption = "Data Frame de Sentimientos Detectados",
+  align = "c"
+)
+```
+
+------------------------------------------------------------------------
+
+## Visualización con nube de palabras
+
+Se construyen **nubes** de palabras para representar visualmente las **60 palabras** más frecuentes asociadas a los sentimientos analizados según el `testamento`. Estas visualizaciones permiten identificar rápidamente los términos más representativos dentro del `léxico` emocional, destacando aquellos que aparecen con mayor recurrencia en el `corpus` bíblico.
+
+```{r}
+#| label: nubes-sentimientos-ggwordcloud
+#| echo: true
+#| fig-cap: "3. Nubes de Palabras para Culpa y Arrepentimiento"
+#| fig-height: 10
+#| fig-width: 18
+#| layout-ncol: 2
+
+# Filtrar y contar frecuencia para el Antiguo Testamento
+frecuencia_at <- biblia_sentimientos_detectados %>%
+  filter(Testamento == "Antiguo Testamento") %>%
+  count(Lema, sort = TRUE) %>%
+  # MEJORA 1: Usamos slice_max() en lugar de top_n()
+  slice_max(order_by = n, n = 60)
+
+# Filtrar y contar frecuencia para el Nuevo Testamento
+frecuencia_nt <- biblia_sentimientos_detectados %>%
+  filter(Testamento == "Nuevo Testamento") %>%
+  count(Lema, sort = TRUE) %>%
+  slice_max(order_by = n, n = 60)
+
+# Nube Antiguo Testamento
+nube_at <- ggplot(frecuencia_at, aes(label = Lema, size = n)) +
+  # MEJORA 2: Usamos geom_text_wordcloud(), que es más robusto
+  geom_text_wordcloud(color = "#1f78b4") +
+  scale_size_area(max_size = 20) +
+  theme_minimal() +
+  labs(title = "Antiguo Testamento") +
+  theme(plot.title = element_text(hjust = 0.5, size = 16))
+
+# Nube Nuevo Testamento
+nube_nt <- ggplot(frecuencia_nt, aes(label = Lema, size = n)) +
+  # MEJORA 2: Usamos geom_text_wordcloud(), que es más robusto
+  geom_text_wordcloud(color = "#33a02c") +
+  scale_size_area(max_size = 12) +
+  theme_minimal() +
+  labs(title = "Nuevo Testamento") +
+  theme(plot.title = element_text(hjust = 0.5, size = 16))
+
+
+# Mostrar con patchwork
+nube_at + nube_nt
+```
+
+------------------------------------------------------------------------
+
 # Análisis de Frecuencia y Distribución
 
-Se analiza la frecuencia de los sentimientos en el Antiguo y Nuevo Testamento.
+Este apartado explora la presencia relativa y absoluta de términos asociados a los sentimientos de **culpa** y **arrepentimiento** en el `corpus` bíblico, comparando su distribución entre el `Antiguo` y el `Nuevo Testamento`. A través del análisis léxico y su visualización, se busca comprender en qué medida estas categorías emocionales están presentes y cómo varían según el contexto textual y teológico.
 
-## Frecuencia de Sentimientos por Testamento
+------------------------------------------------------------------------
+
+## Frecuencia de sentimientos por Testamento
+
+Se calcula la **frecuencia absoluta** y **normalizada** (por cada **10.000 palabras**) de los términos emocionales en cada uno de los testamentos. Esta comparación permite identificar si ciertos sentimientos están más presentes en uno u otro `corpus`, en relación a su extensión total.
 
 ```{r}
 #| label: frecuencia-testamento
-#| echo: false
-#| message: false
-#| warning: false
+#| echo: true
 
 biblia_sentimientos_detectados <- biblia_lemas_final_df %>%
   inner_join(lexico_sentimientos_df, by = "Lema")
@@ -363,79 +762,106 @@ frecuencia_comparativa_testamento <- frecuencia_por_testamento %>%
   mutate(Frecuencia_Normalizada = (Frecuencia_Absoluta / Total_Palabras) * 10000) %>%
   select(Testamento, Sentimiento, Frecuencia_Absoluta, Frecuencia_Normalizada)
 
-# Mostrar solo 6 filas como ejemplo
-knitr::kable(head(frecuencia_comparativa_testamento), 
-             caption = "Frecuencia Comparativa de Sentimientos por Testamento (muestra)")
+message("Frecuencia calculada.")
+
+testamento_sentimiento <- bind_rows(
+  head(frecuencia_comparativa_testamento, 10) %>% mutate(Posicion = "Top 10"),
+  tail(frecuencia_comparativa_testamento, 10) %>% mutate(Posicion = "Bottom 10")
+)
+
+knitr::kable(
+  testamento_sentimiento,
+  caption = "Primeras y últimas 10 combinaciones Testamento–Sentimiento por frecuencia"
+)
 ```
 
-## Frecuencia de Sentimientos por Libro
+------------------------------------------------------------------------
+
+## Frecuencia de sentimientos por Libro
+
+Aquí se examina la frecuencia con la que aparecen los términos del léxico emocional en cada `libro` bíblico. El objetivo es detectar cuáles libros concentran mayor cantidad de referencias emocionales vinculadas a **culpa** o **arrepentimiento**, permitiendo así una lectura más fina de su distribución interna.
 
 ```{r}
 #| label: frecuencia-libro
-#| echo: false
-#| message: false
-#| warning: false
+#| echo: true
 
 frecuencia_sentimiento_por_libro <- biblia_sentimientos_detectados %>%
   group_by(Testamento, Libro, Sentimiento) %>%
   summarise(Frecuencia = n(), .groups = 'drop') %>%
   arrange(Testamento, desc(Frecuencia))
 
-# Mostrar solo las 10 combinaciones más frecuentes
-top_10_libros <- frecuencia_sentimiento_por_libro %>%
-  slice_max(Frecuencia, n = 10)
+message("Frecuencia calculada.")
 
-knitr::kable(top_10_libros, 
-             caption = "Top 10 combinaciones Libro–Sentimiento por frecuencia")
+libro_sentimiento <- bind_rows(
+  head(frecuencia_sentimiento_por_libro, 10) %>% mutate(Posicion = "Top 10"),
+  tail(frecuencia_sentimiento_por_libro, 10) %>% mutate(Posicion = "Bottom 10")
+)
+
+knitr::kable(
+  libro_sentimiento,
+  caption = "Primeras y últimas 10 combinaciones Libro–Sentimiento por frecuencia"
+)
 ```
 
-# Visualización de la Distribución
+------------------------------------------------------------------------
 
-Se visualiza la distribución de los términos de culpa y arrepentimiento en los libros de la Biblia.
+## Visualización de la Distribución
+
+Se grafican los **10 libros** más cargados emocionalmente de cada testamento, en función del total de términos detectados del `léxico` unificado. Este enfoque visual facilita la identificación de núcleos temáticos con mayor densidad emocional, aportando una primera hipótesis sobre su posible función retórica o doctrinal dentro de la narrativa sagrada.
 
 ```{r}
 #| label: visualizacion-distribucion
-#| fig-cap: "Top 10 libros con mayor frecuencia de términos de 'Culpa' y 'Arrepentimiento'."
+#| fig-cap: "4. Top 10 libros con mayor frecuencia de términos de Culpa y Arrepentimiento"
+#| fig.width: 9
+#| fig.height: 10
 
-# Preparar datos para el gráfico: Top 10 libros por sentimiento
-top_libros_sentimiento_facetado <- frecuencia_sentimiento_por_libro %>%
-  group_by(Testamento, Sentimiento) %>%
-  slice_max(order_by = Frecuencia, n = 10) %>% # CAMBIO: de 15 a 10
+frecuencia_sentimientos_por_libro <- biblia_sentimientos_detectados %>%
+  group_by(Testamento, Libro) %>%
+  summarise(Frecuencia = n(), .groups = "drop")
+
+# Obtener top 10 libros por testamento
+top_libros_testamento <- frecuencia_sentimientos_por_libro %>%
+  group_by(Testamento) %>%
+  slice_max(order_by = Frecuencia, n = 10) %>%
   ungroup() %>%
   mutate(Libro = reorder_within(Libro, Frecuencia, Testamento))
 
-# Crear el gráfico
-grafico_sentimientos_libro_facetado <- ggplot(top_libros_sentimiento_facetado, 
-  aes(x = Libro, y = Frecuencia, fill = Sentimiento)) +
+# Graficar
+grafico_top_libros <- ggplot(top_libros_testamento, aes(x = Libro, y = Frecuencia, fill = Testamento)) +
   geom_col(show.legend = FALSE) +
   coord_flip() +
-  facet_wrap(~ Testamento, scales = "free") +
+  facet_wrap(~ Testamento, scales = "free_y") +
   scale_x_reordered() +
   labs(
-    title = "Top 10 Libros con Mayor Frecuencia de Culpa y Arrepentimiento",
-    subtitle = "Comparación entre Antiguo y Nuevo Testamento",
-    x = "Libro Bíblico", y = "Frecuencia Absoluta de Términos"
+    title = "Top 10 Libros con Mayor Frecuencia de Términos Emocionales",
+    subtitle = "Distribución por Testamento (Culpa y Arrepentimiento combinados)",
+    x = "Libro Bíblico", y = "Frecuencia Absoluta"
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 11) +
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5),
-    strip.text = element_text(face = "bold", size = 16)
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 13),
+    plot.subtitle = element_text(hjust = 0.5, size = 10),
+    strip.text = element_text(face = "bold", size = 10),
+    axis.text.y = element_text(size = 9)
   ) +
-  scale_fill_manual(values = c("Culpa" = "#d95f02", "Arrepentimiento" = "#1b9e77")) +
-  facet_grid(Testamento ~ Sentimiento, scales = "free", space = "free_y")
+  scale_fill_manual(values = c("Antiguo Testamento" = "#1f78b4", "Nuevo Testamento" = "#33a02c"))
 
-print(grafico_sentimientos_libro_facetado)
+# Mostrar gráfico
+grafico_top_libros
 ```
+
+------------------------------------------------------------------------
 
 # Análisis de Contexto (KWIC)
 
-Se extraen versículos de ejemplo para comprender el uso de los términos.
+Con el fin de comprender el uso contextual de los términos emocionales seleccionados, se realiza un análisis de concordancia tipo `KWIC` (Key Word in Context), que permite observar cómo aparecen estos términos en su **entorno textual inmediato.** Este procedimiento facilita la identificación de matices semánticos, asociaciones frecuentes y patrones discursivos en torno a los sentimientos de culpa y arrepentimiento, distinguiendo además su uso en el `Antiguo` y el `Nuevo Testamento`.
+
+Se presentan **versículos seleccionados como ejemplos representativos** de cada testamento, a fin de ilustrar cómo se inscriben estos sentimientos en la trama narrativa y doctrinal del corpus bíblico.
 
 ```{r}
 #| label: analisis-contexto
 
-obtener_contextos <- function(sentimiento_buscado, testamento_buscado, n_ejemplos = 3) {
+obtener_contextos <- function(sentimiento_buscado, testamento_buscado, n_ejemplos = 5) {
   ids_versiculos <- biblia_sentimientos_detectados %>%
     filter(Sentimiento == sentimiento_buscado, Testamento == testamento_buscado) %>%
     pull(ID_Versiculo) %>% unique()
@@ -446,113 +872,321 @@ obtener_contextos <- function(sentimiento_buscado, testamento_buscado, n_ejemplo
     select(Libro, Capitulo, Versiculo, Texto)
 }
 
-knitr::kable(obtener_contextos("Culpa", "Antiguo Testamento"), caption = "Contextos de 'Culpa' (AT)")
-knitr::kable(obtener_contextos("Culpa", "Nuevo Testamento"), caption = "Contextos de 'Culpa' (NT)")
-knitr::kable(obtener_contextos("Arrepentimiento", "Antiguo Testamento"), caption = "Contextos de 'Arrepentimiento' (AT)")
-knitr::kable(obtener_contextos("Arrepentimiento", "Nuevo Testamento"), caption = "Contextos de 'Arrepentimiento' (NT)")
+message("Análisis KWIC finalizado.")
 ```
 
-# Redes de Coocurrencia
+------------------------------------------------------------------------
 
-Se visualizan las palabras que co-ocurren con los términos de sentimiento.
+## Contextos de Culpa y Arrepentimiento
+
+Se presentan ejemplos de versículos extraídos del corpus bíblico en los que aparecen términos pertenecientes al `léxico` de **culpa** y **arrepentimiento**. Este análisis de contexto (`KWIC`) permite observar cómo estos sentimientos se manifiestan discursivamente en los relatos del `Antiguo` y del `Nuevo Testamento`.
+
+La **visualización** de estos fragmentos facilita una lectura más cualitativa y situada del uso de las palabras clave, destacando las formas en que se articulan con otros elementos narrativos, teológicos o normativos del texto.
 
 ```{r}
-#| label: analisis-redes
-#| fig-cap: "Redes de coocurrencia para 'Culpa' y 'Arrepentimiento'."
+#| label: analisis-contexto-kabble
+#| echo: true
+#| fig-cap: "5. DF para contextos KWIC"
 
-# Calcular coocurrencias
-coocurrencias_por_testamento <- biblia_lemas_final_df %>%
-  group_by(Testamento) %>%
-  pairwise_count(item = Lema, feature = ID_Versiculo, sort = TRUE) %>%
-  ungroup()
+knitr::kable(
+  obtener_contextos("Culpa/Arrepentimiento", "Antiguo Testamento"),
+  caption = "Contextos de Términos de Sentimiento (Antiguo Testamento)"
+)
 
-# Función para preparar los datos para el grafo
-preparar_datos_grafo <- function(coocurrencias_df, lexico, sentimiento, testamento, top_n = 30) {
-    lemas_sentimiento <- lexico %>% filter(Sentimiento == sentimiento) %>% pull(Lema)
-  
-  coocurrencias_filtradas <- coocurrencias_df %>%
-    filter(Testamento == testamento) %>%
-    filter(item1 %in% lemas_sentimiento, !item2 %in% lemas_sentimiento) %>%
-    slice_max(order_by = n, n = top_n)
-  
-  igraph::graph_from_data_frame(coocurrencias_filtradas, directed = FALSE)
-}
+knitr::kable(
+  obtener_contextos("Culpa/Arrepentimiento", "Nuevo Testamento"),
+  caption = "Contextos de Términos de Sentimiento (Nuevo Testamento)"
+)
 
-# Definir la función de visualización
-visualizar_grafo <- function(grafo, titulo) { 
-  ggraph(grafo, layout = "fr") + 
-    geom_edge_fan(aes(alpha = n), color = "gray70") + 
-    geom_node_point(size = 4, color = "skyblue") + 
-    geom_node_text(aes(label = name), repel = TRUE, size = 3, color = "gray10") + 
-    theme_void(base_size = 12) + 
-    labs(title = titulo, edge_alpha = "Frecuencia") + 
-    theme(plot.title = element_text(hjust = 0.5, face = "bold")) 
-}
-
-# Crear y visualizar grafos
-vis_culpa_at <- visualizar_grafo(preparar_datos_grafo(coocurrencias_por_testamento, lexico_sentimientos_df, "Culpa", "Antiguo Testamento"), "Culpa (AT)")
-vis_culpa_nt <- visualizar_grafo(preparar_datos_grafo(coocurrencias_por_testamento, lexico_sentimientos_df, "Culpa", "Nuevo Testamento"), "Culpa (NT)")
-vis_arrepentimiento_at <- visualizar_grafo(preparar_datos_grafo(coocurrencias_por_testamento, lexico_sentimientos_df, "Arrepentimiento", "Antiguo Testamento"), "Arrepentimiento (AT)")
-vis_arrepentimiento_nt <- visualizar_grafo(preparar_datos_grafo(coocurrencias_por_testamento, lexico_sentimientos_df, "Arrepentimiento", "Nuevo Testamento"), "Arrepentimiento (NT)")
-
-# Combinar y mostrar
-final_network_plot <- (vis_culpa_at | vis_culpa_nt) / (vis_arrepentimiento_at | vis_arrepentimiento_nt) +
-  plot_annotation(tag_levels = 'A')
-
-print(final_network_plot)
 ```
+
+------------------------------------------------------------------------
 
 # Asociaciones Demográficas
 
-Se investiga la asociación entre sentimientos y figuras o grupos demográficos.
+Este apartado busca explorar la presencia y distribución de términos demográficos (figuras **individuales**, **colectivos** sociales o **grupos** religiosos) dentro del `corpus` bíblico, poniendo el foco en su posible **asociación** con los **sentimientos** de culpa y arrepentimiento. Se parte de un `léxico` construido manualmente a partir de nombres propios, categorías sociales, roles religiosos y colectivos relevantes.
+
+El objetivo es identificar los actores más frecuentemente mencionados en contextos emocionales y, eventualmente, analizar su papel simbólico dentro de las narrativas de transgresión y redención.
+
+La lista incluye personajes como Adán, Moisés, Jesús y Pedro, además de grupos como judíos, fariseos, y términos abstractos como multitud, iglesia o nación. Luego de la **curaduría** inicial, se **lematizan** los términos y se eliminan posibles coincidencias con **stopwords** para garantizar la pertinencia del análisis.
 
 ```{r}
 #| label: analisis-demografico
 
-terminos_demograficos <- c("adán", "eva", "caín", "abraham", "moisés", "aaron", "david", "salomón", "job", "isaías", "jeremías", "israel", "hijo de israel", "judío", "levita", "sacerdote", "jesús", "cristo", "juan bautista", "pedro", "pablo", "judas", "discípulo", "apóstol", "fariseo", "saduceo", "gentil", "iglesia")
-lexico_demografico_lemas <- lematizar_lista_lexico(terminos_demograficos, modelo_udpipe)
+terminos_demograficos <- c(
+  "adán", "eva", "caín", "abraham", "isaac", "jacob", "moisés", "aaron", 
+  "david", "salomón", "job", "isaías", "jeremías", "daniel", "josué", "elías", "eliseo",
+  "jesús", "cristo", "maría", "jose", "juan", "pedro", "pablo", "judas", "tomás", "discípulo", "apóstol", "israel", "israelita", "judío", "samaritano", "gentil", "cananeo", "egipcio", "romano", "fariseo", "saduceo", "sacerdote", "levita", "profeta", "rey", "sacerdote", "escriba", "doctor", "tribu", "pueblo", "nación", "iglesia", "multitud", "mujer", "varón", "niño", "niña", "jóven", "anciano"
+)
+
+# Separar términos simples y compuestos
+terminos_compuestos <- terminos_demograficos[stringr::str_detect(terminos_demograficos, "\\s")]
+terminos_simples <- terminos_demograficos[!stringr::str_detect(terminos_demograficos, "\\s")]
+
+# Lematizar los términos simples
+lemas_simples_raw <- lematizar_lista_lexico(terminos_simples, modelo_udpipe)
+
+# Diccionario de correcciones para los errores del lematizador
+correcciones_lemas <- c(
+  "ad" = "adán", "evar" = "eva", "caír" = "caín", "davir" = "david",
+  "isaía" = "isaías", "jeremía" = "jeremías", "josar" = "josué",
+  "elía" = "elías", "elisear" = "eliseo", "jesú" = "jesús",
+  "crer" = "cristo", "marir" = "maría", "juar" = "juan", "juda" = "judas",
+  "discípular" = "discípulo", "israelitar" = "israelita", "judiar" = "judío",
+  "romanar" = "romano", "saducear" = "saduceo", "sacerdotar" = "sacerdote",
+  "levitar" = "levita", "profetar" = "profeta", "escribir" = "escriba",
+  "iglesiar" = "iglesia", "jóvar" = "jóven", "aar" = "aaron"
+)
+
+# Aplicar las correcciones a los lemas simples
+lemas_simples_corregidos <- ifelse(
+  lemas_simples_raw %in% names(correcciones_lemas),
+  correcciones_lemas[lemas_simples_raw],
+  lemas_simples_raw
+)
+
+# Unir los lemas corregidos con los términos compuestos originales
+lexico_demografico_lemas <- c(lemas_simples_corregidos, terminos_compuestos)
+
+# Filtrado final por relevancia semántica
+lexico_demografico_lemas <- unique(setdiff(lexico_demografico_lemas, lista_stopwords_es))
+
+# Crear el DataFrame final
 lexico_demografico_df <- tibble(Lema = lexico_demografico_lemas, Tipo = "Demográfico")
 
+message("Léxico creado con éxito.")
+
+knitr::kable(
+  lexico_demografico_df
+  )
+
+```
+
+------------------------------------------------------------------------
+
+## Coocurrencia entre Sentimientos y Términos Demográficos
+
+Este análisis busca identificar los **términos demográficos** más asociados a contextos emocionales —particularmente, aquellos que **co-ocurren** con expresiones de **culpa** o **arrepentimiento** dentro del mismo `versículo`.
+
+A partir del cruce entre los lemas del corpus y el léxico demográfico, se construye una tabla que muestra los **10 actores** o **colectivos** más implicados en cada testamento, en función de su frecuencia compartida con términos del léxico emocional. Esta lectura permite rastrear no solo la presencia de los sujetos, sino también su inscripción en tramas de sentido asociadas al castigo, la conversión, el perdón o la transgresión.
+
+```{r}
+#| label: asociaciones-demograficas-sentimientos
+#| echo: true
+#| results: asis
+
+# Obtener ID de versículos que contienen al menos un lema demográfico
+versiculos_con_demograficos <- biblia_lemas_final_df %>%
+  semi_join(lexico_demografico_df, by = "Lema") %>%
+  distinct(ID_Versiculo)
+
+# Obtener ID de versículos que contienen al menos un lema emocional
+versiculos_con_sentimientos <- biblia_sentimientos_detectados %>%
+  distinct(ID_Versiculo)
+
+# Intersección de ambos
+versiculos_comunes <- intersect(
+  versiculos_con_demograficos$ID_Versiculo,
+  versiculos_con_sentimientos$ID_Versiculo
+)
+
+# Construir tabla de coocurrencias, evitando duplicaciones innecesarias
 asociaciones_demograficas <- biblia_lemas_final_df %>%
+  filter(ID_Versiculo %in% versiculos_comunes) %>%
   inner_join(lexico_demografico_df, by = "Lema") %>%
   rename(Lema_Demografico = Lema) %>%
   inner_join(
-    biblia_sentimientos_detectados %>% select(ID_Versiculo, Sentimiento, Lema_Sentimiento = Lema),
-    by = "ID_Versiculo", relationship = "many-to-many"
+    biblia_sentimientos_detectados %>%
+      select(ID_Versiculo, Sentimiento, Lema_Sentimiento = Lema),
+    by = "ID_Versiculo"
   ) %>%
-  distinct(ID_Versiculo, Testamento, Lema_Demografico, Sentimiento)
+  distinct(Testamento, ID_Versiculo, Lema_Demografico, Sentimiento)
 
-tabla_asociaciones_pivote <- asociaciones_demograficas %>%
-  count(Testamento, Lema_Demografico, Sentimiento, sort = TRUE) %>%
-  group_by(Testamento, Sentimiento) %>%
-  slice_max(order_by = n, n = 10) %>% # CAMBIO: de 15 a 10
-  ungroup() %>%
-  tidyr::pivot_wider(names_from = Sentimiento, values_from = n, values_fill = 0) %>%
-  arrange(Testamento, desc(Culpa + Arrepentimiento))
-
-knitr::kable(tabla_asociaciones_pivote, caption = "Top 10 Asociaciones Demográficas por Sentimiento y Testamento")
 ```
 
-# Guardado de Resultados
+------------------------------------------------------------------------
 
-Finalmente, se guardan los `data.frames` y gráficos generados en el análisis.
+## Visualización con gráfico de barras
+
+El siguiente gráfico muestra los **10 términos** demográficos más frecuentes en cada testamento. Esta visualización permite identificar diferencias narrativas entre el `Antiguo` y el `Nuevo Testamento` en cuanto a los **sujetos** o **colectivos** más invocados.
 
 ```{r}
-#| label: guardar-resultados
+#| label: analisis-demografico-barras
+#| echo: true
+#| fig-cap: "6. Gráfico de barras para análisis demográfico"
 
-if (!dir.exists("output/data_processed")) dir.create("output/data_processed", recursive = TRUE)
-if (!dir.exists("output/figures")) dir.create("output/figures", recursive = TRUE)
+# Detectar menciones en la Biblia
+biblia_demografia_detectada <- biblia_lemas_final_df %>%
+  inner_join(lexico_demografico_df, by = "Lema") %>%
+  count(Testamento, Lema, sort = TRUE)
 
-message("Guardando resultados del análisis...")
+datos_grafico <- asociaciones_demograficas %>%
+  count(Testamento, Lema_Demografico, sort = TRUE) %>%
+  group_by(Testamento) %>%
+  slice_max(n, n = 15) %>%
+  ungroup()
 
-readr::write_csv(biblia_lemas_final_df, "output/data_processed/biblia_lemas_final.csv")
-readr::write_csv(frecuencia_comparativa_testamento, "output/data_processed/frecuencia_comparativa_testamento.csv")
-readr::write_csv(frecuencia_sentimiento_por_libro, "output/data_processed/frecuencia_sentimiento_por_libro.csv")
-readr::write_csv(tabla_asociaciones_pivote, "output/data_processed/asociaciones_demograficas_pivot.csv")
-readr::write_csv(lexico_sentimientos_df, "output/data_processed/lexico_sentimientos_custom.csv")
+datos_grafico %>%
+  mutate(Lema_Demografico = reorder_within(Lema_Demografico, n, Testamento)) %>%
+  
+  ggplot(aes(x = Lema_Demografico, y = n, fill = Testamento)) +
+  geom_col(show.legend = FALSE) +
+  # Esta escala especial limpia las etiquetas para el facetado
+  scale_x_reordered() +
+  coord_flip() +
+  facet_wrap(~Testamento, scales = "free_y") +
+  labs(
+    title = "Términos demográficos más frecuentes en contextos emocionales",
+    subtitle = "Top 15 por Testamento",
+    x = "Término Demográfico",
+    y = "Frecuencia de Coocurrencia"
+  ) +
+  theme_minimal()
+```
 
-ggsave("output/figures/distribucion_sentimientos_por_libro.png", plot = grafico_sentimientos_libro_facetado, width = 12, height = 10, dpi = 300)
-ggsave("output/figures/redes_coocurrencia_comparativas.png", plot = final_network_plot, width = 14, height = 12, dpi = 300)
+------------------------------------------------------------------------
 
-message("Resultados guardados en la carpeta 'output/'.")
+## Coocurrencia entre Sentimientos y Términos Demográficos
+
+Este análisis busca identificar los **términos demográficos** más asociados a contextos emocionales —particularmente, aquellos que **co-ocurren** con expresiones de **culpa** o **arrepentimiento** dentro del mismo `versículo`.
+
+A partir del cruce entre los lemas del corpus y el léxico demográfico, se construye una tabla que muestra los **10 actores** o **colectivos** más implicados en cada testamento, en función de su frecuencia compartida con términos del léxico emocional. Esta lectura permite rastrear no solo la presencia de los sujetos, sino también su inscripción en tramas de sentido asociadas al castigo, la conversión, el perdón o la transgresión.
+
+```{r}
+#| label: coocurrencias-demograficas-sentimiento
+#| echo: true
+#| results: asis
+
+# Obtener ID de versículos que contienen al menos un lema demográfico
+versiculos_con_demograficos <- biblia_lemas_final_df %>%
+  semi_join(lexico_demografico_df, by = "Lema") %>%
+  distinct(ID_Versiculo)
+
+# Obtener ID de versículos que contienen al menos un lema emocional
+versiculos_con_sentimientos <- biblia_sentimientos_detectados %>%
+  distinct(ID_Versiculo)
+
+# Intersección de ambos
+versiculos_comunes <- intersect(
+  versiculos_con_demograficos$ID_Versiculo,
+  versiculos_con_sentimientos$ID_Versiculo
+)
+
+# Construir tabla de coocurrencias, evitando duplicaciones innecesarias
+asociaciones_demograficas <- biblia_lemas_final_df %>%
+  filter(ID_Versiculo %in% versiculos_comunes) %>%
+  inner_join(lexico_demografico_df, by = "Lema") %>%
+  rename(Lema_Demografico = Lema) %>%
+  inner_join(
+    biblia_sentimientos_detectados %>%
+      select(ID_Versiculo, Sentimiento, Lema_Sentimiento = Lema),
+    by = "ID_Versiculo"
+  ) %>%
+  distinct(Testamento, ID_Versiculo, Lema_Demografico, Sentimiento)
+
+```
+
+------------------------------------------------------------------------
+
+## Coocurrencia con grafos
+
+Este apartado representa gráficamente las relaciones entre **emociones** (culpa y arrepentimiento) y términos demográficos dentro del texto bíblico, diferenciando los resultados por testamento. Se construyen grafos no dirigidos, donde los nodos representan palabras y las aristas indican **coocurrencia** (presencia conjunta en el mismo `versículo`).
+
+```{r}
+#| label: asociaciones-demograficas-sentimientos-grafos
+#| echo: true
+#| results: asis
+#| fig-cap: "7. Grafico de grafos"
+
+# Crear data frames de coocurrencia por Testamento
+red_at_df <- asociaciones_demograficas %>%
+  filter(Testamento == "Antiguo Testamento") %>%
+  count(Sentimiento, Lema_Demografico, sort = TRUE) %>%
+  filter(n >= 5) # Mantenemos un umbral para claridad
+
+red_nt_df <- asociaciones_demograficas %>%
+  filter(Testamento == "Nuevo Testamento") %>%
+  count(Sentimiento, Lema_Demografico, sort = TRUE) %>%
+  filter(n >= 5)
+
+# Función para crear y visualizar los grafos (para no repetir código)
+visualizar_red <- function(df, titulo) {
+  grafo <- graph_from_data_frame(df, directed = FALSE)
+  V(grafo)$tipo <- ifelse(V(grafo)$name %in% unique(df$Sentimiento), "Sentimiento", "Demográfico")
+  
+  # Visualizar el grafo
+  ggraph(grafo, layout = "fr") +
+    geom_edge_link(aes(width = n, alpha = n), color = "gray") +
+    scale_edge_width(range = c(0.5, 4)) +
+    
+    # Diferenciar por color el tipo de nodo
+    geom_node_point(aes(color = tipo), size = 5) +
+    scale_color_manual(values = c("Sentimiento" = "#e41a1c", "Demográfico" = "#377eb8")) +
+    
+    geom_node_text(aes(label = name), repel = TRUE, size = 3.5) +
+    
+    theme_void() +
+    labs(
+      title = titulo,
+      edge_width = "Frecuencia",
+      color = "Tipo de Nodo"
+      ) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+      )
+}
+
+# Crear cada gráfico
+plot_at <- visualizar_red(red_at_df, "Antiguo Testamento")
+plot_nt <- visualizar_red(red_nt_df, "Nuevo Testamento")
+
+# Unir ambos gráficos con patchwork
+redes_plot <- plot_at | plot_nt
+
+print(redes_plot)
+```
+
+```{r} 
+#| label: guardar-resultados 
+#| include: false
+
+# Crear un directorio 'output' para guardar los resultados, si no existe.
+output_dir <- "output"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir)
+}
+
+# Definir la ruta del archivo de guardado.
+ruta_guardado <- here::here(output_dir, "resultados_analisis.RData")
+
+# Guardar todos los objetos relevantes en el archivo.
+# Se incluyen los data frames principales, los léxicos y los gráficos finales.
+save(
+  # --- Data Frames del Corpus ---
+  biblia_df,
+  biblia_df_procesado,
+  biblia_lemas_final_df,
+  
+  # --- Léxicos Construidos ---
+  lexico_sentimientos_df,
+  lexico_demografico_df,
+  
+  # --- Resultados de Análisis ---
+  biblia_sentimientos_detectados,
+  asociaciones_demograficas,
+  biblia_nrc_summary_es,
+  
+  # --- Gráficos (objetos ggplot/patchwork) ---
+  nube_at,
+  nube_nt,
+  grafico_top_libros,
+  redes_plot,
+
+  # --- Archivo a guardar ---
+  file = ruta_guardado
+)
+
+# Mensaje de confirmación que se mostrará en la consola al renderizar.
+message(paste("Resultados del análisis guardados exitosamente en:", ruta_guardado))
+
 ```

@@ -43,7 +43,10 @@ Figuras como **David** y el **pueblo de Israel** son centrales en las narrativas
 git clone https://github.com/405755-Ortega-Alejo/Trabajo-Final---Text-Mining---Ortega.git
 cd Trabajo-Final---Text-Mining---Ortega
 ```
+<<<<<<< HEAD
 ---
+=======
+>>>>>>> 4fded7b (Entrega final)
 
 ## 📁 Estructura del Repositorio
 ```
@@ -66,6 +69,10 @@ cd Trabajo-Final---Text-Mining---Ortega
 ```
 
 ---
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4fded7b (Entrega final)
 ## 📥 Datos Brutos
 
 - `data/raw/rv_1909.txt`:  
